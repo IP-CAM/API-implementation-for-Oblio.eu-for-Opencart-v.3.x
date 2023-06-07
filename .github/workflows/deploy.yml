@@ -12,10 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - shell: bash
+        run: |
+          ls -l
+          mkdir -p deploy
+          ls | grep -v deploy | xargs mv -t deploy
+          ls -l
       - name: Zip contents
         uses: vimtor/action-zip@v1
         with:
-          files: ./
+          files: deploy
           dest: ./packaging/oblio-opencart3.zip
 
       - name: Pushes to builds repository
