@@ -1155,13 +1155,16 @@ SCRIPT;
                 $model = new Oblio\Products($this);
                 $index = 0;
                 foreach ($products['data'] as $product) {
+                    $index++;
                     $post = $model->find($product);
+                    if ($post && $this->getProductType($post['product_id'])) {
+                        continue;
+                    }
                     if ($post) {
                         $model->update($post['product_id'], $product);
                     } else {
                         // $model->insert($product);
                     }
-                    $index++;
                 }
                 $offset += $limitPerPage; // next page
             } while ($index === $limitPerPage);
