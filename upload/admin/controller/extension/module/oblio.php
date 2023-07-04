@@ -1157,7 +1157,7 @@ SCRIPT;
                 foreach ($products['data'] as $product) {
                     $index++;
                     $post = $model->find($product);
-                    if ($post && $this->getProductType($post['product_id'])) {
+                    if ($post && $this->getProductType($post['product_id']) !== $product['productType']) {
                         continue;
                     }
                     if ($post) {
