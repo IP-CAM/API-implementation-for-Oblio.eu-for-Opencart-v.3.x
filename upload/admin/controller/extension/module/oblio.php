@@ -270,7 +270,7 @@ class ControllerExtensionModuleOblio extends Controller {
             'label' => 'TVA Transport',
             'name' => 'module_oblio_vat_shipping',
             'class' => '',
-            'value' => $data['module_oblio_vat_shipping'] ? $data['module_oblio_vat_shipping'] : 19,
+            'value' => isset($data['module_oblio_vat_shipping']) ? $data['module_oblio_vat_shipping'] : 19,
             //'lang' => true,
             //'required' => true
         );
