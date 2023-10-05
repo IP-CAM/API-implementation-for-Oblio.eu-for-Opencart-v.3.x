@@ -796,7 +796,7 @@ SCRIPT;
         $secret                 = isset($settings['module_oblio_api_secret']) ? $settings['module_oblio_api_secret'] : null;
 
         if (!$cui || !$email || !$secret) {
-            return [];
+            return ['error' => 'Eroare configurare, intra la Oblio &gt; Setari'];
         }
         $this->load->model('sale/order');
 
@@ -871,7 +871,7 @@ SCRIPT;
         $discount_separate_lines    = isset($settings['module_oblio_discount_separate_lines']) ? $settings['module_oblio_discount_separate_lines'] === 'Da' : false;
 
         if (!$cui || !$email || !$secret) {
-            return [];
+            return ['error' => 'Eroare configurare, intra la Oblio &gt; Setari'];
         }
         $language_id = (int) $this->config->get('config_language_id');
 
