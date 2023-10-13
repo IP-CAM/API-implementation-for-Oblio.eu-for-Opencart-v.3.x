@@ -303,10 +303,11 @@ class ControllerExtensionModuleOblio extends Controller {
             $keyName = 'module_oblio_invoice_' . $fieldName;
             $data[$keyName] = $this->config->get($keyName);
             $invoiceOptionsFields[] = [
-                'type'  => in_array($fieldName, ['mentions']) ? 'textarea' : 'text',
-                'label' => $this->language->get('entry_' . $fieldName),
-                'name'  => $keyName,
-                'value' => $data[$keyName],
+                'type'          => in_array($fieldName, ['mentions']) ? 'textarea' : 'text',
+                'label'         => $this->language->get('entry_' . $fieldName),
+                'name'          => $keyName,
+                'value'         => $data[$keyName],
+                'description'   => in_array($fieldName, ['mentions']) ? '[order_id] = numar comanda<br> [date] = data comanda' : '',
             ];
         }
         $fieldSets[] = [
@@ -919,6 +920,13 @@ SCRIPT;
                     break;
                 }
             }
+
+            $replace = [
+                '[order_id]'    => $order_id,
+                '[date]'        => date('d.m.Y', strtotime($order_info['date_added'])),
+            ];
+            $mentions = $this->config->get('module_oblio_invoice_mentions');
+            $mentions = str_replace(array_keys($replace), array_values($replace), $mentions);
             
             $invData = array(
                 'cif'                => $cui,
@@ -957,7 +965,7 @@ SCRIPT;
                 'deputyIdentityCard' => $this->config->get('module_oblio_invoice_deputy_identity_card'),
                 'deputyAuto'         => $this->config->get('module_oblio_invoice_deputy_auto'),
                 'selesAgent'         => $this->config->get('module_oblio_invoice_seles_agent'),
-                'mentions'           => $this->config->get('module_oblio_invoice_mentions'),
+                'mentions'           => $mentions,
                 'value'              => 0,
                 'workStation'        => $workstation,
                 'sendEmail'          => $send_email === 'Da',

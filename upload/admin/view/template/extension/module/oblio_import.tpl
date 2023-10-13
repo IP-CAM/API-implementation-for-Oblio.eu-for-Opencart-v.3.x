@@ -1,43 +1,44 @@
-{$header}{$column_left}
+<?php echo $header; ?>
+<?php echo $column_left; ?>
 
 <div id="content">
   <div class="page-header">
     <div class="container-fluid">
-      <h1>{$heading_title}</h1>
+      <h1>Sincronizare stocuri</h1>
       <ul class="breadcrumb">
-        {foreach from=$breadcrumbs item=breadcrumb}
-        <li><a href="{$breadcrumb.href}">{$breadcrumb.text}</a></li>
-        {/foreach}
+        <?php foreach ($breadcrumbs as $breadcrumb): ?>
+        <li><a href="<?php echo $breadcrumb['href']; ?>"><?php echo $breadcrumb['text']; ?></a></li>
+        <?php endforeach; ?>
       </ul>
     </div>
   </div>
   <div class="container-fluid">
     <div id="oblio_message"></div>
-    {if $error.permission}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$error_permission}
+    <?php if (!empty($error['permission'])): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $error_permission; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {elseif $message_error_api}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$message_error_api}
+    <?php elseif (!empty($message_error_api)): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $message_error_api; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {elseif count($error) > 0}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$error_warning}
+    <?php elseif (count($error) > 0): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $error_warning; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {/if}
-    {if $success}
-    <div class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$success}
+    <?php endif; ?>
+    <?php if (!empty($success)): ?>
+    <div class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $success; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {/if}
+    <?php endif; ?>
     <div class="panel panel-default">
       <div class="panel-heading">Sincronizare manuala</div>
       <div class="panel-body">
         <p>Sincronizarea manuala iti permite sa sincronizezi stocul imediat.</p>
         <p>Daca folosesti sincronizarea automata folosind Cron Jobs, stocul se actualizeaza automat la fiecare ora.</p>
-        <form action="{$action}" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
-          <a class="btn btn-danger" id="oblio_update_stock"><i class="fa fa-arrow-down"></i> {$page_name}</a>
+        <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
+          <a class="btn btn-danger" id="oblio_update_stock"><i class="fa fa-arrow-down"></i> <?php echo $page_name; ?></a>
         </form>
       </div>
     </div>
@@ -46,7 +47,7 @@
       <div class="panel-heading">Sincronizare folosind Cron Jobs</div>
         <div class="panel-body">
             <p>Pentru a sincroniza stocul in fiecare ora adaugati comanda urmatoare in Crontab:</p>
-            <pre>{$cron_minute} 	* 	* 	* 	*	php {$dir_system}library/oblio/cron.php {$secret}</pre>
+            <pre><?php echo $cron_minute; ?> 	* 	* 	* 	*	php <?php echo $dir_system; ?>library/oblio/cron.php <?php echo $secret; ?></pre>
         </div>
       </div>
     </div>
@@ -55,8 +56,7 @@
 
 <script type="text/javascript">
 "use strict";
-var ajaxLink = "{$ajax_link}";
-{literal}
+var ajaxLink = "<?php echo $ajax_link; ?>";
 $(document).ready(function() {
     $('#oblio_update_stock').click(function(e) {
         var self = $(this);
@@ -90,7 +90,6 @@ $(document).ready(function() {
         response.html(html);
     }
 });
-{/literal}
 </script>
 
-{$footer}
+<?php echo $footer; ?>

@@ -1,109 +1,110 @@
-{$header}{$column_left}
+<?php echo $header; ?>
+<?php echo $column_left; ?>
 
 <div id="content">
   <div class="page-header">
     <div class="container-fluid">
       <div class="pull-right">
-        <button type="submit" form="form-module" data-toggle="tooltip" title="{$button_save}" class="btn btn-primary"><i class="fa fa-save"></i></button>
-        <a href="{$cancel}" data-toggle="tooltip" title="{$button_cancel}" class="btn btn-default"><i class="fa fa-reply"></i></a></div>
-      <h1>{$heading_title}</h1>
+        <button type="submit" form="form-module" data-toggle="tooltip" title="<?php echo $button_save; ?>" class="btn btn-primary"><i class="fa fa-save"></i></button>
+        <a href="<?php echo $cancel; ?>" data-toggle="tooltip" title="<?php echo $button_cancel; ?>" class="btn btn-default"><i class="fa fa-reply"></i></a></div>
+      <h1><?php echo $heading_title; ?></h1>
       <ul class="breadcrumb">
-        {foreach breadcrumb in breadcrumbs}
-        <li><a href="{$breadcrumb.href}">{$breadcrumb.text}</a></li>
-        {/foreach}
+        <?php foreach ($breadcrumbs as $breadcrumb): ?>
+        <li><a href="<?php echo $breadcrumb['href']; ?>"><?php echo $breadcrumb['text']; ?></a></li>
+        <?php endforeach; ?>
       </ul>
     </div>
   </div>
   <div class="container-fluid">
-    {if $error.permission}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$error_permission}
+    <?php if (!empty($error['permission'])): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $error_permission; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {elseif $message_error_api}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$message_error_api}
+    <?php elseif (!empty($message_error_api)): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $message_error_api; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {elseif count($error) > 0}
-    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$error_warning}
+    <?php elseif (count($error) > 0): ?>
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $error_warning; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {/if}
-    {if $success}
-    <div class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle"></i> {$success}
+    <?php endif; ?>
+    <?php if (!empty($success)): ?>
+    <div class="alert alert-success alert-dismissible"><i class="fa fa-exclamation-circle"></i> <?php echo $success; ?>
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
-    {/if}
+    <?php endif; ?>
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title"><i class="fa fa-pencil"></i> {$text_edit}</h3>
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> Editeaza</h3>
       </div>
       <div class="panel-body">
-        <form action="{$action}" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
+        <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
           <div class="form-group">
-            <label class="col-sm-2 control-label" for="input-email-url">{$entry_email}</label>
+            <label class="col-sm-2 control-label" for="input-email-url"><?php echo $entry_email; ?></label>
             <div class="col-sm-10">
-              <input type="text" name="module_oblio_email" value="{$module_oblio_email}" placeholder="{$placeholder_email}" id="input-email-url" class="form-control" />
-              {if $error.email}
-              <div class="text-danger">{$error_email}</div>
-              {/if}
+              <input type="text" name="module_oblio_email" value="<?php echo $module_oblio_email; ?>" id="input-email-url" class="form-control" />
+              <?php if (!empty($error['email'])): ?>
+              <div class="text-danger"><?php echo $error_email; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           
           <div class="form-group">
-            <label class="col-sm-2 control-label" for="input-api-secret">{$entry_api_secret} <span data-toggle="tooltip" title="{$help_api_secret}"></span></label>
+            <label class="col-sm-2 control-label" for="input-api-secret"><?php echo $entry_api_secret; ?> <span data-toggle="tooltip" title="<?php echo $help_api_secret; ?>"></span></label>
             <div class="col-sm-10">
-              <input type="text" name="module_oblio_api_secret" value="{$module_oblio_api_secret}" placeholder="{$placeholder_api_secret}" id="input-api-secret" class="form-control" />
-              {if $error.api_secret}
-              <div class="text-danger">{$error_api_secret}</div>
-              {/if}
+              <input type="text" name="module_oblio_api_secret" value="<?php echo $module_oblio_api_secret; ?>" id="input-api-secret" class="form-control" />
+              <?php if (!empty($error['api_secret'])): ?>
+              <div class="text-danger"><?php echo $error_api_secret; ?></div>
+              <?php endif; ?>
             </div>
           </div>
           
           <div class="form-group">
-            <label class="col-sm-2 control-label" for="input-status">{$entry_status}</label>
+            <label class="col-sm-2 control-label" for="input-status"><?php echo $entry_status; ?></label>
             <div class="col-sm-10">
               <select name="module_oblio_status" id="input-status" class="form-control">
-                {if $module_oblio_status}
-                <option value="1" selected="selected">{$text_enabled}</option>
-                <option value="0">{$text_disabled}</option>
-                {else}
-                <option value="1">{$text_enabled}</option>
-                <option value="0" selected="selected">{$text_disabled}</option>
-                {/if}
+                <?php if (!empty($module_oblio_status)): ?>
+                <option value="1" selected="selected">Activ</option>
+                <option value="0">Inactiv</option>
+                <?php else: ?>
+                <option value="1">Activ</option>
+                <option value="0" selected="selected">Inactiv</option>
+                <?php endif; ?>
               </select>
             </div>
           </div>
           
-        {foreach from=$fieldSets item=fieldSet}
+        <?php foreach ($fieldSets as $fieldSet): ?>
           <div class="form-group">
-            <div class="col-sm-12"><h4>{$fieldSet.name}</h4></div>
+            <div class="col-sm-12"><h4><?php echo $fieldSet['name']; ?></h4></div>
           </div>
-          {foreach from=$fieldSet.fields item=field}
+        <?php foreach ($fieldSet['fields'] as $field): ?>
           <div class="form-group">
-            <label class="col-sm-2 control-label" for="select-{$field.name}">{$field.label}</label>
+            <label class="col-sm-2 control-label" for="select-<?php echo $field['name']; ?>"><?php echo $field['label']; ?></label>
             <div class="col-sm-10">
-            {if $field.type == 'select'}
-              <select name="{$field.name}" id="select-{$field.name}" class="form-control">
-              {foreach option in field.options.query}
+            <?php if ($field['type'] == 'select'): ?>
+              <select name="<?php echo $field['name']; ?>" id="select-<?php echo $field['name']; ?>" class="form-control">
+              <?php foreach ($field['options']['query'] as $option): ?>
                 <option
-                    value="{$option[field.options.id]}"
-                    {if $option[field.options.id] == field.selected} selected{/if}
-                    {if $field.options.data}
-                    {foreach from=$data key=key item=value}
-                        data-{$key}="{$option[value]}"
-                    {/foreach}
-                    {/if}>{$option[field.options.name]}</option>
-              {/foreach}
+                    value="<?php echo $option[$field['options']['id']]; ?>"
+                    <?php if ($option[$field['options']['id']] == $field['selected']): ?> selected<?php endif; ?>
+                    <?php if (!empty($field['options']['data'])): ?>
+                    <?php foreach ($field['options']['data'] as $key=>$value): ?>
+                        data-<?php echo $key; ?>="<?php echo isset($option[$value]) ? $option[$value] : ''; ?>"
+                    <?php endforeach; ?>
+                    <?php endif; ?>><?php echo $option[$field['options']['name']]; ?></option>
+              <?php endforeach; ?>
               </select>
-            {elseif $field.type == 'text'}
-              <input name="{$field.name}" id="select-{$field.name}" class="form-control" value="{$field.value}" />
-            {elseif $field.type == 'textarea'}
-              <textarea name="{$field.name}" id="select-{$field.name}" class="form-control">{$field.value}</textarea>
-            {/if}
+            <?php elseif ($field['type'] == 'text'): ?>
+              <input name="<?php echo $field['name']; ?>" id="select-<?php echo $field['name']; ?>" class="form-control" value="<?php echo $field['value']; ?>" />
+            <?php elseif ($field['type'] == 'textarea'): ?>
+              <textarea name="<?php echo $field['name']; ?>" id="select-<?php echo $field['name']; ?>" class="form-control"><?php echo $field['value']; ?></textarea>
+            <?php endif; ?>
             </div>
           </div>
-          {/foreach}
-        {/foreach}
+          <?php endforeach; ?>
+        <?php endforeach; ?>
         </form>
       </div>
     </div>
@@ -111,8 +112,7 @@
 </div>
 
 <script type="text/javascript">
-var ajax_link = '{$ajax_link}';
-{literal}
+var ajax_link = '<?php echo $ajax_link; ?>';
 "use strict";
 (function($) {
     $(document).ready(function() {
@@ -182,7 +182,6 @@ var ajax_link = '{$ajax_link}';
         }
     });
 })(jQuery);
-{/literal}
 </script>
 
-{$footer}
+<?php echo $footer; ?>
