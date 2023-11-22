@@ -121,18 +121,18 @@ class ControllerExtensionModuleOblio extends Controller {
                         $api->setCif($cui);
                         
                         // series
-                        sleep(1); // 1s sleep
+                        usleep(500000);
                         $response = $api->nomenclature('series', '', ['type' => 'Factura']);
                         $series = $response['data'];
 
                         // series
-                        /*sleep(1); // 1s sleep
+                        usleep(500000);
                         $response = $api->nomenclature('series', '', ['type' => 'Proforma']);
-                        $seriesProforma = $response['data'];//*/
+                        $seriesProforma = $response['data'];
                         
                         // management
                         if ($useStock) {
-                            sleep(1); // 1s sleep
+                            usleep(500000);
                             $response = $api->nomenclature('management', '');
                             foreach ($response['data'] as $item) {
                                 if ($data['module_oblio_company_workstation'] === $item['workStation']) {
@@ -157,7 +157,7 @@ class ControllerExtensionModuleOblio extends Controller {
                         //'lang' => true,
                         'required' => true
                     );
-                    /*$fields[] = array(
+                    $fields[] = array(
                         'type' => 'select',
                         'label' => 'Serie proforma',
                         'name' => 'module_oblio_company_series_name_proforma',
@@ -169,8 +169,8 @@ class ControllerExtensionModuleOblio extends Controller {
                         'class' => 'chosen',
                         'selected' => $data['module_oblio_company_series_name_proforma'],
                         //'lang' => true,
-                        'required' => true
-                    );//*/
+                        // 'required' => true
+                    );
                     $fields[] = array(
                         'type' => 'select',
                         'label' => 'Punct de lucru',
@@ -839,20 +839,21 @@ SCRIPT;
     }
 
     public function generate($eventRoute, &$data) {
-        /*$use_stock  = isset($settings['module_oblio_use_stock']) ? $settings['module_oblio_use_stock'] : 'Nu';
         $data = $this->generateInvoice([
             'orderId' => ($this->request->get['order_id'] ?? 0),
-            'docType' => 'invoice',
-            'useStock' => $use_stock === 'Da',
+            'docType' => 'proforma',
         ]);
         if ($eventRoute === 'sale/order/createinvoiceno') {
-            $json = ['invoice_no' => $data['seriesName'] . ' ' . $data['number']];
+            $json = [
+                'invoice_no' => $data['seriesName'] . ' ' . $data['number'],
+                'data'       => $data,
+            ];
 
             $this->response->addHeader('Content-Type: application/json');
             $this->response->setOutput(json_encode($json));
         } else {
             $this->response->redirect($data['link']);
-        }//*/
+        }
     }
     
     public function generateInvoice($options = []) {
@@ -885,7 +886,7 @@ SCRIPT;
         $order_id = $options['orderId'];
 
         $order_info = $this->model_sale_order->getOrder($order_id);
-        $invoiceData = $this->getInvoiceData($order_id);
+        $invoiceData = $this->getInvoiceData($order_id, $options + ['order' => $order_info]);
         if ($invoiceData && $invoiceData['number'] > 0) {
             try {
                 $ver = Oblio\Api::VERSION;
@@ -893,7 +894,7 @@ SCRIPT;
                 $api = new Oblio\Api($email, $secret, $accessTokenHandler);
                 $api->setCif($cui);
 
-                $invoice = $api->get('invoice', $invoiceData['series_name'], $invoiceData['number']);
+                $invoice = $api->get($options['docType'], $invoiceData['series_name'], $invoiceData['number']);
                 return $invoice['data'];
             } catch (Exception $e) {
                 // delete old
@@ -901,7 +902,7 @@ SCRIPT;
                     'seriesName'    => '',
                     'number'        => '',
                     'link'          => '',
-                ]);
+                ], $options);
             }
         }
         try {
@@ -1114,11 +1115,11 @@ SCRIPT;
             $api = new Oblio\Api($email, $secret, $accessTokenHandler);
             // create invoice:
             switch ($options['docType']) {
-                case 'profoma': $result = $api->createProforma($invData); break;
+                case 'proforma': $result = $api->createProforma($invData); break;
                 default: $result = $api->createInvoice($invData);
             }
 
-            $this->setInvoiceData($order_id, $result['data']);
+            $this->setInvoiceData($order_id, $result['data'], $options);
             
             return $result['data'];
         } catch (Exception $e) {
@@ -1295,13 +1296,28 @@ SCRIPT;
         return '';
     }
 
-    public function getInvoiceData($order_id) {
+    public function getInvoiceData($order_id, array $options = []) {
+        if (!empty($options['docType']) && $options['docType'] === 'proforma') {
+            return [
+                'order_id'      => $order_id,
+                'series_name'   => $options['order']['invoice_prefix'] ?? null,
+                'number'        => $options['order']['invoice_no'] ?? null,
+                'link '         => null,
+            ];
+        }
         $sql = sprintf('SELECT * FROM `' . DB_PREFIX . $this->_table_invoice . '` WHERE `order_id`=%d', $order_id);
         $query = $this->db->query($sql);
         return $query->row;
     }
 
-    public function setInvoiceData($order_id, array $data) {
+    public function setInvoiceData($order_id, array $data, array $options = []) {
+        if (!empty($options['docType']) && $options['docType'] === 'proforma') {
+            $sql = "UPDATE `" . DB_PREFIX . "order` " .
+                "SET invoice_prefix = '" . $this->db->escape($data['seriesName']) . "', invoice_no = '" . intval($data['number']) . "', date_modified = NOW() " .
+                "WHERE order_id = '" . (int)$order_id . "'";
+		    $this->db->query($sql);
+            return;
+        }
         $sql = sprintf('REPLACE INTO `' . DB_PREFIX . $this->_table_invoice . '` (number, series_name, link, order_id) VALUES(%d, "%s", "%s", %d)',
             $data['number'], $this->db->escape($data['seriesName']), $this->db->escape($data['link']), $order_id);
         $this->db->query($sql);
