@@ -485,6 +485,7 @@ class ControllerExtensionModuleOblio extends Controller {
         $data = [];
         switch ($type) {
             case 'series_name':
+            case 'series_name_proforma':
             case 'workstation':
             case 'management':
                 $data = $this->getApiData([
@@ -1209,7 +1210,12 @@ SCRIPT;
             
             switch ($type) {
                 case 'series_name':
-                    $response = $api->nomenclature('series', '', ['type' => 'Factura']);
+                case 'series_name_proforma':
+                    $filters = ['type' => 'Factura'];
+                    if ($type == 'series_name_proforma') {
+                        $filters['type'] = 'Proforma';
+                    }
+                    $response = $api->nomenclature('series', '', $filters);
                     $result = $response['data'];
                     break;
                 case 'workstation':

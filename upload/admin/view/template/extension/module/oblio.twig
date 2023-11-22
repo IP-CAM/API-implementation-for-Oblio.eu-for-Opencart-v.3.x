@@ -122,10 +122,10 @@
     $(document).ready(function() {
         var oblio_cui = $('#select-module_oblio_company_cui'),
             oblio_series_name = $('#select-module_oblio_company_series_name'),
+            oblio_series_name_proforma = $('#select-module_oblio_company_series_name_proforma'),
             oblio_workstation = $('#select-module_oblio_company_workstation'),
             oblio_management = $('#select-module_oblio_company_management'),
             useStock = parseInt(oblio_cui.find('option:selected').data('use-stock')) === 1;
-        console.log(oblio_cui);
         showManagement(useStock);
         
         oblio_cui.change(function() {
@@ -138,6 +138,11 @@
                 useStock = parseInt(oblio_cui.find('option:selected').data('use-stock')) === 1;
 
             populateOptions(data, oblio_series_name);
+            populateOptions({
+                action:'oblio',
+                type:'series_name_proforma',
+                cui:oblio_cui.val()
+            }, oblio_series_name_proforma);
             
             if (useStock) {
                 data.type = 'workstation';
