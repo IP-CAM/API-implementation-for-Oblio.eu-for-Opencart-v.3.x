@@ -28,6 +28,9 @@ class ControllerExtensionModuleOblio extends Controller {
         ['name' => 'MPN', 'value' => 'mpn'],
     ];
     private $error          = array();
+
+    const INVOICE   = 1;
+    const PROFORMA  = 2;
   
     public function index() {
         $this->load->language('extension/module/oblio');
@@ -597,16 +600,24 @@ class ControllerExtensionModuleOblio extends Controller {
     public function addOrderVars($eventRoute, &$data) {
         $this->load->model('sale/order');
         $order_id = (int) ($this->request->get['order_id'] ?? 0);
-        // $order_info = $this->model_sale_order->getOrder($order_id);
         $invoiceData = $this->getInvoiceData($order_id);
+        $proformaData = $this->getInvoiceData($order_id, ['docType' => 'proforma']);
         $isLastInvoice = true;
         $btnText = '';
+        $btnProformaText = '';
         $btnClass = 'oblio-generate-invoice';
+        $btnProformaClass = 'oblio-view-invoice';
         $generateBtnClass = '';
         $deleteBtnClass = ' hidden';
+        $deleteProformaBtnClass = ' hidden';
         $linkInvoice = $this->url->link('extension/module/oblio/generate_invoice', $this->getToken() . '&order_id=' . $this->request->get['order_id'], true);
+        $linkInvoice = htmlspecialchars_decode($linkInvoice);
+        $linkProforma = $this->url->link('extension/module/oblio/generate_invoice', $this->getToken() . '&docType=proforma&order_id=' . $this->request->get['order_id'], true);
+        $linkProforma = htmlspecialchars_decode($linkProforma);
         $linkDeleteInvoice = $this->url->link('extension/module/oblio/delete_invoice', $this->getToken() . '&order_id=' . $this->request->get['order_id'], true);
         $linkDeleteInvoice = htmlspecialchars_decode($linkDeleteInvoice);
+        $linkDeleteProforma = $this->url->link('extension/module/oblio/delete_invoice', $this->getToken() . '&docType=proforma&order_id=' . $this->request->get['order_id'], true);
+        $linkDeleteProforma = htmlspecialchars_decode($linkDeleteProforma);
         if ($invoiceData && $invoiceData['number'] > 0) {
             $isLastInvoice = $this->isLastInvoice($invoiceData);
             $generateBtnClass = 'hidden';
@@ -615,7 +626,13 @@ class ControllerExtensionModuleOblio extends Controller {
             $btnClass = 'oblio-view-invoice';
             $linkInvoice = $this->url->link('extension/module/oblio/view_invoice', $this->getToken() . '&order_id=' . $this->request->get['order_id'], true);
         }
-        $linkInvoice = htmlspecialchars_decode($linkInvoice);
+        if ($proformaData && $proformaData['number'] > 0) {
+            $deleteProformaBtnClass = '';
+            $btnProformaText = sprintf('Proforma %s%d', $proformaData['series_name'], $proformaData['number']);
+            $btnProformaClass = 'oblio-view-proforma';
+            $linkProforma = $this->url->link('extension/module/oblio/view_invoice', $this->getToken() . '&docType=proforma&order_id=' . $this->request->get['order_id'], true);
+            $linkProforma = htmlspecialchars_decode($linkProforma);
+        }
 
         $script = <<<SCRIPT
         <script>
@@ -666,19 +683,31 @@ class ControllerExtensionModuleOblio extends Controller {
                 icon: 'fa fa-remove',
                 link: '{$linkDeleteInvoice}'
             });
+            appendButton({
+                name: 'Emite proforma cu Oblio',
+                class: '{$btnProformaClass} {$generateBtnClass}',
+                link: '{$linkProforma}',
+                text: '{$btnProformaText}'
+            });
+            appendButton({
+                name: 'Sterge proforma',
+                class: 'oblio-delete-proforma {$generateBtnClass} {$deleteProformaBtnClass}',
+                icon: 'fa fa-remove',
+                link: '{$linkDeleteProforma}'
+            });
         });
 
         $(document).ready(function() {
-            var buttons = $('.oblio-generate-invoice'),
-                deleteButton = $('.oblio-delete-invoice'),
+            var buttons = $('.oblio-generate-invoice, .oblio-generate-proforma'),
+                deleteButton = $('.oblio-delete-invoice, .oblio-delete-proforma'),
                 viewButton = $('.oblio-view-invoice'),
                 responseContainer = $('#oblio-response');
-            buttons.click(function(e) {
-                var self = $(this);
+            buttons.on('click', function(e) {
+                var self = $(this), type = self.hasClass('oblio-generate-invoice') ? 'invoice' : 'proforma';
                 if (self.hasClass('disabled')) {
                     return false;
                 }
-                if (!self.hasClass('oblio-generate-invoice')) {
+                if (!self.hasClass('oblio-generate-invoice') && !self.hasClass('oblio-generate-proforma')) {
                     return true;
                 }
                 e.preventDefault();
@@ -692,13 +721,17 @@ class ControllerExtensionModuleOblio extends Controller {
                         self.removeClass('disabled');
                         
                         if ('link' in response) {
-                            buttons.not(self).hide();
+                            if (type === 'invoice') {
+                                buttons.not(self).addClass('hidden');
+                                deleteButton.addClass('hidden');
+                            }
                             self
                                 .attr('href', response.link)
                                 .removeClass('oblio-generate-invoice')
+                                .removeClass('oblio-generate-proforma')
                                 .text(`Vezi factura \${response.seriesName} \${response.number}`);
                                 alertMsg = '<div class="alert alert-success">FACTURA a fost emisa</div>';
-                            deleteButton.removeClass('hidden');
+                            deleteButton.filter(`.oblio-delete-\${type}`).removeClass('hidden');
                         } else if ('error' in response) {
                             alertMsg = '<div class="alert alert-danger">' + response.error + '</div>';
                         }
@@ -706,7 +739,7 @@ class ControllerExtensionModuleOblio extends Controller {
                     }
                 });
             });
-            deleteButton.click(function(e) {
+            deleteButton.on('click', function(e) {
                 var self = $(this);
                 if (self.hasClass('disabled')) {
                     return false;
@@ -769,9 +802,10 @@ SCRIPT;
 
     public function view_invoice() {
         $use_stock  = isset($settings['module_oblio_use_stock']) ? $settings['module_oblio_use_stock'] : 'Nu';
+        $docType    = $this->request->get['docType'] ?? 'invoice';
         $data = $this->generateInvoice([
-            'orderId' => (int) ($this->request->get['order_id'] ?? 0),
-            'docType' => 'invoice',
+            'orderId'  => (int) ($this->request->get['order_id'] ?? 0),
+            'docType'  => $docType,
             'useStock' => $use_stock === 'Da',
         ]);
         $this->response->redirect($data['link']);
@@ -779,9 +813,10 @@ SCRIPT;
 
     public function generate_invoice() { // generare factura
         $use_stock  = (int) ($this->request->get['use_stock'] ?? 0);
+        $docType  = $this->request->get['docType'] ?? 'invoice';
         $data = $this->generateInvoice([
-            'orderId' => (int) ($this->request->get['order_id'] ?? 0),
-            'docType' => 'invoice',
+            'orderId'  => (int) ($this->request->get['order_id'] ?? 0),
+            'docType'  => $docType,
             'useStock' => $use_stock,
         ]);
 
@@ -803,7 +838,14 @@ SCRIPT;
         $this->load->model('sale/order');
 
         $order_id = (int) ($this->request->get['order_id'] ?? 0);
-        $invoiceData = $this->getInvoiceData($order_id);
+        $docType = $this->request->get['docType'] ?? 'invoice';
+        
+        $order_info = $this->model_sale_order->getOrder($order_id);
+        $invoiceData = $this->getInvoiceData($order_id, [
+            'order'   => $order_info,
+            'docType' => $docType,
+        ]);
+        // print_r($invoiceData);die;
         if ($invoiceData && $invoiceData['number'] > 0) {
             try {
                 $ver = Oblio\Api::VERSION;
@@ -811,7 +853,7 @@ SCRIPT;
                 $api = new Oblio\Api($email, $secret, $accessTokenHandler);
                 $api->setCif($cui);
 
-                $response = $api->delete('invoice', $invoiceData['series_name'], $invoiceData['number']);
+                $response = $api->delete($docType, $invoiceData['series_name'], $invoiceData['number']);
                 $data = [
                     'type'    => 'success',
                     'message' => $response['statusMessage']
@@ -821,7 +863,7 @@ SCRIPT;
                     'seriesName'    => '',
                     'number'        => '',
                     'link'          => '',
-                ]);
+                ], ['docType' => $docType]);
             } catch (Exception $e) {
                 $data = [
                     'type'    => 'danger',
@@ -1303,29 +1345,15 @@ SCRIPT;
     }
 
     public function getInvoiceData($order_id, array $options = []) {
-        if (!empty($options['docType']) && $options['docType'] === 'proforma') {
-            return [
-                'order_id'      => $order_id,
-                'series_name'   => $options['order']['invoice_prefix'] ?? null,
-                'number'        => $options['order']['invoice_no'] ?? null,
-                'link '         => null,
-            ];
-        }
-        $sql = sprintf('SELECT * FROM `' . DB_PREFIX . $this->_table_invoice . '` WHERE `order_id`=%d', $order_id);
+        $sql = sprintf('SELECT * FROM `' . DB_PREFIX . $this->_table_invoice . '` WHERE `order_id`=%d AND `type`=%d',
+            $order_id, self::getDocTypeId($options['docType'] ?? 'invoice'));
         $query = $this->db->query($sql);
         return $query->row;
     }
 
     public function setInvoiceData($order_id, array $data, array $options = []) {
-        if (!empty($options['docType']) && $options['docType'] === 'proforma') {
-            $sql = "UPDATE `" . DB_PREFIX . "order` " .
-                "SET invoice_prefix = '" . $this->db->escape($data['seriesName']) . "', invoice_no = '" . intval($data['number']) . "', date_modified = NOW() " .
-                "WHERE order_id = '" . (int)$order_id . "'";
-		    $this->db->query($sql);
-            return;
-        }
-        $sql = sprintf('REPLACE INTO `' . DB_PREFIX . $this->_table_invoice . '` (number, series_name, link, order_id) VALUES(%d, "%s", "%s", %d)',
-            $data['number'], $this->db->escape($data['seriesName']), $this->db->escape($data['link']), $order_id);
+        $sql = sprintf('REPLACE INTO `' . DB_PREFIX . $this->_table_invoice . '` (number, `type`, series_name, link, order_id) VALUES(%d, %d, "%s", "%s", %d)',
+            $data['number'], self::getDocTypeId($options['docType'] ?? 'invoice'), $this->db->escape($data['seriesName']), $this->db->escape($data['link']), $order_id);
         $this->db->query($sql);
     }
 
@@ -1338,6 +1366,17 @@ SCRIPT;
 
     public function getPriceWithVat($price, $vatPercentage = 0) {
         return (float) number_format($price * (100 + $vatPercentage) / 100, 2, '.', '');
+    }
+
+    public static function getDocTypeId($docType) {
+        switch ($docType) {
+            case 'proforma':
+                $type = self::PROFORMA;
+                break;
+            default:
+                $type = self::INVOICE;
+        }
+        return $type;
     }
     
     private function _checkTableType() {
@@ -1359,11 +1398,32 @@ SCRIPT;
         if ($query->num_rows === 0) {
             $sql = "CREATE TABLE `" . DB_PREFIX . $this->_table_invoice . "` (
               `order_id` int(11) NOT NULL,
+              `type` tinyint(1) NOT NULL DEFAULT '1',
               `series_name` varchar(15) NOT NULL DEFAULT '',
               `number` int(11) NOT NULL,
               `link` varchar(255) NOT NULL,
-              PRIMARY KEY (`order_id`)
+              PRIMARY KEY (`order_id`, `type`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+            $this->db->query($sql);
+        }
+
+        $checkInvoiceTable = 'SHOW COLUMNS FROM `' . DB_PREFIX . $this->_table_invoice . '`';
+        $query = $this->db->query($checkInvoiceTable);
+        $found = [];
+        foreach ($query->rows as $column) {
+            $found[$column['Field']] = $column['Type'];
+        }
+        if (empty($found['type'])) {
+            $sql = 'ALTER TABLE `' . DB_PREFIX . $this->_table_invoice . '` CHANGE `order_id` `order_id` INT(10) UNSIGNED NOT NULL;';
+            $this->db->query($sql);
+            
+            $sql = 'ALTER TABLE `' . DB_PREFIX . $this->_table_invoice . '` DROP PRIMARY KEY;';
+            $this->db->query($sql);
+            
+            $sql = 'ALTER TABLE `' . DB_PREFIX . $this->_table_invoice . '`  ADD `type` tinyint(1) NOT NULL DEFAULT "1" AFTER `order_id`;';
+            $this->db->query($sql);
+            
+            $sql = 'ALTER TABLE `' . DB_PREFIX . $this->_table_invoice . '` ADD PRIMARY KEY(`order_id`, `type`);';
             $this->db->query($sql);
         }
     }
