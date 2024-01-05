@@ -956,12 +956,15 @@ SCRIPT;
             
             $this->load->model('customer/custom_field');
             $clientCif = '';
+            $clientRc = '';
             foreach ($order_info['payment_custom_field'] as $custom_field_id => $custom_field_value) {
                 $custom_field = $this->model_customer_custom_field->getCustomFieldDescriptions($custom_field_id);
                 
                 if (preg_match('/(cif|cui)/i', $custom_field[$language_id]['name'])) {
                     $clientCif = $order_info['payment_custom_field'][$custom_field_id];
-                    break;
+                }
+                if (preg_match('/(reg)/i', $custom_field[$language_id]['name'])) {
+                    $clientRc = $order_info['payment_custom_field'][$custom_field_id];
                 }
             }
 
@@ -977,7 +980,7 @@ SCRIPT;
                 'client'             => [
                     'cif'           => $clientCif,
                     'name'          => empty($order_info['payment_company']) ? $contact : $order_info['payment_company'],
-                    'rc'            => '',
+                    'rc'            => $clientRc,
                     'code'          => '',
                     'address'       => trim($order_info['payment_address_1'] . ' ' . $order_info['payment_address_2']),
                     'state'         => $order_info['payment_zone'],
