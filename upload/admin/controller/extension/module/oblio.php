@@ -1113,8 +1113,17 @@ SCRIPT;
                         break;
                 }
             }
-            
-            if (!empty($info['shipping'])) {
+
+            if (!empty($info['discount'])) {
+                $invData['products'][] = [
+                    'name'             => $info['discount']['title'],
+                    'discount'         => round($info['discount']['value'] * (1 + $vatPercentage / 100), $invData['precision']),
+                    'discountAllAbove' => 1,
+                    'discountType'     => 'valoric',
+                ];
+                $totalValue += round(end($invData['products'])['discount'], 4);
+            }
+            if (!empty($info['shipping']) && $info['shipping']['value'] > 0) {
                 $invData['products'][] = [
                     'name'          => 'Transport',
                     'code'          => '',
@@ -1130,14 +1139,6 @@ SCRIPT;
                     'productType'   => 'Serviciu',
                 ];
                 $totalValue += round(end($invData['products'])['price'] * (1 + ($vat_shipping / 100)), 4);
-            }
-            if (!empty($info['discount'])) {
-                $invData['products'][] = [
-                    'name'          => $info['discount']['title'],
-                    'discount'      => round($info['discount']['value'] * (1 + $vatPercentage / 100), $invData['precision']),
-                    'discountType'  => 'valoric',
-                ];
-                $totalValue += round(end($invData['products'])['discount'], 4);
             }
             if (number_format($totalValue, 2, '.', '') !== number_format($info['total']['value'], 2, '.', '')) {
                 $invData['products'][] = [
