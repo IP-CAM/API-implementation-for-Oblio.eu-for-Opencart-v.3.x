@@ -18,7 +18,7 @@ class Products {
     }
     /**
      *  Finds product if it exists
-     *  @param array data
+     *  @param array $data
      *  @return array product
      */
     public function find($data) {
@@ -47,7 +47,7 @@ class Products {
     
     /**
      *  Finds product by id
-     *  @param int product_id
+     *  @param int $product_id
      *  @return array product
      */
     public function get($product_id) {
@@ -56,7 +56,7 @@ class Products {
     
     /**
      *  Insert product
-     *  @param array data
+     *  @param array $data
      *  @return bool
      */
     public function insert($data) {
@@ -123,11 +123,12 @@ class Products {
     
     /**
      *  Update product
-     *  @param int product_id
-     *  @param array data
+     *  @param int $product_id
+     *  @param array $data
+     *  @param array $ordersQty
      *  @return bool
      */
-    public function update($product_id, $data) {
+    public function update($product_id, $data, $ordersQty = []) {
         if (empty($data['price'])) {
             return false;
         }
@@ -140,6 +141,11 @@ class Products {
         }
         $model = empty($data['code']) ? '' : $data['code'];
         $quantity = $isService ? 100 : (int) $data['quantity'];
+        
+        // stock adjusments for orders
+        if (isset($ordersQty[$product_id])) {
+            $quantity -= $ordersQty[$product_id];
+        }
         $sql = "UPDATE " . DB_PREFIX . "product 
                 SET
                     quantity = '" . $quantity . "',
@@ -151,7 +157,7 @@ class Products {
     
     /**
      *  Get product price
-     *  @param array data
+     *  @param array $data
      *  @return float
      */
     public function getPrice($data) {
@@ -164,7 +170,8 @@ class Products {
     
     /**
      *  Get Tax Rules Group Id
-     *  @param float rate
+     *  @param float $rate
+     *  @param string $based
      *  @return int
      */
     public function getTaxClassId($rate, $based = 'shipping') {

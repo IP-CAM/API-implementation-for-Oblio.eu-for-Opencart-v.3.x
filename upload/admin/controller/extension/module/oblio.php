@@ -77,6 +77,7 @@ class ControllerExtensionModuleOblio extends Controller {
         $data['module_oblio_use_stock'] = $this->config->get('module_oblio_use_stock');
         $data['module_oblio_vat_shipping'] = $this->config->get('module_oblio_vat_shipping');
         $data['module_oblio_discount_separate_lines'] = $this->config->get('module_oblio_discount_separate_lines');
+        $data['module_oblio_stock_adjusments'] = $this->config->get('module_oblio_stock_adjusments');
         
         // get API data
         $fields = [];
@@ -280,7 +281,7 @@ class ControllerExtensionModuleOblio extends Controller {
 
         $fields[] = array(
             'type' => 'select',
-            'label' => 'Discount pe liniii separate',
+            'label' => 'Discount pe linii separate',
             'name' => 'module_oblio_discount_separate_lines',
             'options' => [
                 'query' => $this->_no_yes,
@@ -292,7 +293,23 @@ class ControllerExtensionModuleOblio extends Controller {
             //'lang' => true,
             //'required' => true
         );
-        
+
+        $fields[] = array(
+            'type' => 'select',
+            'label' => 'Rezerva stoc comenzi',
+            'description' => 'Stocul din magazin va fi stocul din Oblio minus comenzile din ultimele 30 de zile Care nu sunt facturate in Oblio',
+            'name' => 'module_oblio_stock_adjusments',
+            'options' => [
+                'query' => $this->_no_yes,
+                'id'    => 'name',
+                'name'  => 'name',
+            ],
+            'class' => 'chosen',
+            'selected' => $data['module_oblio_stock_adjusments'] ? $data['module_oblio_stock_adjusments'] : 'Nu',
+            //'lang' => true,
+            //'required' => true
+        );
+
         // fieldsets
         $fieldSets = [];
         $fieldSets[] = [
@@ -1173,6 +1190,22 @@ SCRIPT;
             return ['error' => $e->getMessage()];
         }
     }
+
+    public function getOrdersQty($options = []) {
+        $sql = "SELECT op.product_id, op.quantity, oi.series_name, oi.number FROM " . DB_PREFIX . "order_product op " .
+            "LEFT JOIN " . DB_PREFIX . "order o ON(o.order_id=op.order_id) " .
+            "LEFT JOIN " . DB_PREFIX . $this->_table_invoice . " oi ON(oi.order_id=o.order_id AND oi.type=1)" . 
+            "WHERE o.date_added BETWEEN '{$options['date_start']}' AND '{$options['date_end']}'";
+        $query = $this->db->query($sql);
+        $products = [];
+        foreach ($query->rows as $item) {
+            if (!empty($item['series_name']) && !empty($item['number'])) {
+                continue;
+            }
+            $products[$item['product_id']] += (int) $item['quantity'];
+        }
+        return $products;
+    }
     
     public function syncStock(&$error = '') {
         $this->load->model('setting/setting');
@@ -1183,10 +1216,19 @@ SCRIPT;
         $secret         = isset($settings['module_oblio_api_secret']) ? $settings['module_oblio_api_secret'] : null;
         $workstation    = isset($settings['module_oblio_company_workstation']) ? $settings['module_oblio_company_workstation'] : null;
         $management     = isset($settings['module_oblio_company_management']) ? $settings['module_oblio_company_management'] : null;
+        $adjusments     = isset($settings['module_oblio_stock_adjusments']) ? $settings['module_oblio_stock_adjusments'] : null;
         
         if (!$email || !$secret || !$cui) {
             $error = 'Configurati modulul Oblio cu detaliile activitatii dumneavoastra.';
             return 0;
+        }
+
+        $ordersQty = [];
+        if ($adjusments === 'Da') {
+            $ordersQty = $this->getOrdersQty([
+                'date_start'    => date('Y-m-d', time() - 3600 * 24 * 30),
+                'date_end'      => date('Y-m-d'),
+            ]);
         }
         
         $total = 0;
@@ -1217,7 +1259,7 @@ SCRIPT;
                         continue;
                     }
                     if ($post) {
-                        $model->update($post['product_id'], $product);
+                        $model->update($post['product_id'], $product, $ordersQty);
                     } else {
                         // $model->insert($product);
                     }
