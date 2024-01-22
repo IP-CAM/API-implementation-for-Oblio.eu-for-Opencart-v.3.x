@@ -1195,7 +1195,7 @@ SCRIPT;
         $sql = "SELECT op.product_id, op.quantity, oi.series_name, oi.number FROM " . DB_PREFIX . "order_product op " .
             "LEFT JOIN " . DB_PREFIX . "order o ON(o.order_id=op.order_id) " .
             "LEFT JOIN " . DB_PREFIX . $this->_table_invoice . " oi ON(oi.order_id=o.order_id AND oi.type=1)" . 
-            "WHERE o.date_added BETWEEN '{$options['date_start']}' AND '{$options['date_end']}'";
+            "WHERE o.order_status_id NOT IN(0, 4, 5) AND o.date_added BETWEEN '{$options['date_start']}' AND '{$options['date_end']}'";
         $query = $this->db->query($sql);
         $products = [];
         foreach ($query->rows as $item) {
@@ -1227,7 +1227,7 @@ SCRIPT;
         if ($adjusments === 'Da') {
             $ordersQty = $this->getOrdersQty([
                 'date_start'    => date('Y-m-d', time() - 3600 * 24 * 30),
-                'date_end'      => date('Y-m-d'),
+                'date_end'      => date('Y-m-d', time() + 3600 * 24),
             ]);
         }
         
