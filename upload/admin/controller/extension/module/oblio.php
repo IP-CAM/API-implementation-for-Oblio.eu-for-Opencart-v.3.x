@@ -988,6 +988,7 @@ SCRIPT;
             $replace = [
                 '[order_id]'    => $order_id,
                 '[date]'        => date('d.m.Y', strtotime($order_info['date_added'])),
+                '[awb]'         => $this->getAwb($order_id),
             ];
             $mentions = $this->config->get('module_oblio_invoice_mentions');
             $mentions = str_replace(array_keys($replace), array_values($replace), $mentions);
@@ -1205,6 +1206,18 @@ SCRIPT;
             $products[$item['product_id']] += (int) $item['quantity'];
         }
         return $products;
+    }
+
+    public function getAwb($order_id) {
+        $sql = "SHOW TABLES LIKE '" . DB_PREFIX . "sameday_awb'";
+        $query = $this->db->query($sql);
+        if ($query->num_rows === 0) {
+            return '';
+        }
+
+        $sql= "SELECT awb_number FROM " . DB_PREFIX . "sameday_awb WHERE order_id = '" . (int)$order_id . "' LIMIT 1";
+        $query = $this->db->query($sql);
+        return $query->num_rows === 1 ? $query->row['awb_number'] : '';
     }
     
     public function syncStock(&$error = '') {
