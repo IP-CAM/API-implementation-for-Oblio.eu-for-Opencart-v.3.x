@@ -22,7 +22,7 @@ jobs:
         uses: vimtor/action-zip@v1
         with:
           files: deploy
-          dest: ./packaging/oblio-opencart3.zip
+          dest: ./packaging/oblio.3.ocmod.zip
 
       - name: Pushes to builds repository
         uses: cpina/github-action-push-to-another-repository@main
