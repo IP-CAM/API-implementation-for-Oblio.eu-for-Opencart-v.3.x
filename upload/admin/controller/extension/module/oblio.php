@@ -1026,7 +1026,7 @@ SCRIPT;
                     'phone'         => $order_info['telephone'],
                     'contact'       => $contact,
                     'vatPayer'      => preg_match('/^RO/i', $clientCif),
-                    'autocomplete'  =>  $autocomplete_company
+                    'autocomplete'  => $autocomplete_company
                 ],
                 'issueDate'          => date('Y-m-d'), // strtotime($order_info['date_added'])
                 'dueDate'            => '',
