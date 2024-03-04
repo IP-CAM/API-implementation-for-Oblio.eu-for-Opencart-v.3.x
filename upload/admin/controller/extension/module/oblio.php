@@ -78,6 +78,7 @@ class ControllerExtensionModuleOblio extends Controller {
         $data['module_oblio_vat_shipping'] = $this->config->get('module_oblio_vat_shipping');
         $data['module_oblio_discount_separate_lines'] = $this->config->get('module_oblio_discount_separate_lines');
         $data['module_oblio_stock_adjusments'] = $this->config->get('module_oblio_stock_adjusments');
+        $data['module_oblio_autocomplete_company'] = $this->config->get('module_oblio_autocomplete_company');
         
         // get API data
         $fields = [];
@@ -306,6 +307,20 @@ class ControllerExtensionModuleOblio extends Controller {
             ],
             'class' => 'chosen',
             'selected' => $data['module_oblio_stock_adjusments'] ? $data['module_oblio_stock_adjusments'] : 'Nu',
+            //'lang' => true,
+            //'required' => true
+        );
+         $fields[] = array(
+            'type' => 'select',
+            'label' => 'Completeaza automat datele pentru companiile din Romania pe baza CIF-ului',
+            'name' => 'module_oblio_autocomplete_company',
+            'options' => [
+                'query' => $this->_no_yes,
+                'id'    => 'name',
+                'name'  => 'name',
+            ],
+            'class' => 'chosen',
+            'selected' => $data['module_oblio_autocomplete_company'] ? $data['module_oblio_autocomplete_company'] : 'Nu',
             //'lang' => true,
             //'required' => true
         );
@@ -931,6 +946,7 @@ SCRIPT;
         $send_email                 = isset($settings['module_oblio_send_email']) ? $settings['module_oblio_send_email'] : 'Nu';
         $vat_shipping               = isset($settings['module_oblio_vat_shipping']) ? $settings['module_oblio_vat_shipping'] : 19;
         $discount_separate_lines    = isset($settings['module_oblio_discount_separate_lines']) ? $settings['module_oblio_discount_separate_lines'] === 'Da' : false;
+        $autocomplete_company       = isset($settings['module_oblio_autocomplete_company']) ? $settings['module_oblio_autocomplete_company'] === 'Da' : false;
 
         if (!$cui || !$email || !$secret) {
             return ['error' => 'Eroare configurare, intra la Oblio &gt; Setari'];
@@ -1010,6 +1026,7 @@ SCRIPT;
                     'phone'         => $order_info['telephone'],
                     'contact'       => $contact,
                     'vatPayer'      => preg_match('/^RO/i', $clientCif),
+                    'autocomplete'  =>  $autocomplete_company
                 ],
                 'issueDate'          => date('Y-m-d'), // strtotime($order_info['date_added'])
                 'dueDate'            => '',
